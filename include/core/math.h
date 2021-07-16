@@ -641,34 +641,28 @@ struct string_converter<vrc::math::mat4> : string_converter_base<vrc::math::mat4
 
 template<>
 struct variant_type_impl<vrc::math::vec2>
-    : variant_type_with_string_converter_impl<vrc::math::vec2, variant_id::kVector2D> {
-    variant_type_impl() {}
-};
+    : variant_type_with_string_converter_impl<vrc::math::vec2, variant_id::kVector2D> {};
 
 template<>
 struct variant_type_impl<vrc::math::vec3>
-    : variant_type_with_string_converter_impl<vrc::math::vec3, variant_id::kVector3D> {
-    variant_type_impl() {}
-};
+    : variant_type_with_string_converter_impl<vrc::math::vec3, variant_id::kVector3D> {};
 
 template<>
 struct variant_type_impl<vrc::math::vec4>
-    : variant_type_with_string_converter_impl<vrc::math::vec4, variant_id::kVector4D> {
-    variant_type_impl() {}
-};
+    : variant_type_with_string_converter_impl<vrc::math::vec4, variant_id::kVector4D> {};
 
 template<>
 struct variant_type_impl<vrc::math::quat>
     : variant_type_with_string_converter_impl<vrc::math::quat, variant_id::kQuaternion> {
     variant_type_impl() {
-        vtable()->converter(variant_id::kVector4D) = from_vec4_conv;
-        variant_type_impl<vrc::math::vec4>::vtable()->converter(variant_id::kQuaternion) = to_vec4_conv;
+        vtable()->set_cvt(variant_id::kVector4D, from_vec4_cvt);
+        variant_type_impl<vrc::math::vec4>::vtable()->set_cvt(variant_id::kQuaternion, to_vec4_cvt);
     }
-    static void from_vec4_conv(void* tgt, const void* src) {
+    static void from_vec4_cvt(void* tgt, const void* src) {
         auto v = *(vrc::math::vec4*)src;
         *(vrc::math::quat*)tgt = vrc::math::quat(v.x(), v.y(), v.z(), v.w());
     }
-    static void to_vec4_conv(void* tgt, const void* src) {
+    static void to_vec4_cvt(void* tgt, const void* src) {
         auto q = *(vrc::math::quat*)src;
         *(vrc::math::vec4*)tgt = vrc::math::vec4(q.x(), q.y(), q.z(), q.w());
     }
@@ -676,9 +670,7 @@ struct variant_type_impl<vrc::math::quat>
 
 template<>
 struct variant_type_impl<vrc::math::mat4>
-    : variant_type_with_string_converter_impl<vrc::math::mat4, variant_id::kMatrix4x4> {
-    variant_type_impl() {}
-};
+    : variant_type_with_string_converter_impl<vrc::math::mat4, variant_id::kMatrix4x4> {};
 
 }  // namespace util
 

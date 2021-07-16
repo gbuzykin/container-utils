@@ -135,10 +135,15 @@ class CORE_EXPORT variant {
         void (*serialize)(QDataStream&, const void*);
         void (*deserialize)(QDataStream&, void*);
 #endif  // USE_QT
-        std::array<void (*)(void*, const void*), kMaxTypeId> converters;
-        auto converter(id_t in_type) -> decltype(*converters.begin()) {
-            assert(static_cast<unsigned>(in_type) < kMaxTypeId);
-            return converters[static_cast<unsigned>(in_type)];
+        using cvt_func_t = void (*)(void*, const void*);
+        std::array<cvt_func_t, kMaxTypeId> cvt;
+        cvt_func_t get_cvt(id_t type) {
+            assert(static_cast<unsigned>(type) < kMaxTypeId);
+            return cvt[static_cast<unsigned>(type)];
+        }
+        void set_cvt(id_t type, cvt_func_t fn) {
+            assert(static_cast<unsigned>(type) < kMaxTypeId);
+            cvt[static_cast<unsigned>(type)] = fn;
         }
     };
 
@@ -160,7 +165,7 @@ variant::variant(id_t type, const Ty& val) : vtable_(get_impl(type)) {
         return;
     }
     auto tgt = vtable_->construct_default(&data_);
-    if (auto conv_func = vtable_->converter(val_vtable->type)) { conv_func(tgt, &val); }
+    if (auto cvt_func = vtable_->get_cvt(val_vtable->type)) { cvt_func(tgt, &val); }
 }
 
 template<typename Ty, typename>
@@ -198,9 +203,9 @@ Ty variant::value() const {
             auto tgt_vtable = variant_type_impl<Ty>::vtable();
             if (vtable_ == tgt_vtable) {
                 return *(Ty*)pval;
-            } else if (auto conv_func = tgt_vtable->converter(vtable_->type)) {
+            } else if (auto cvt_func = tgt_vtable->get_cvt(vtable_->type)) {
                 Ty result;
-                conv_func(&result, pval);
+                cvt_func(&result, pval);
                 return result;
             }
         }
@@ -254,7 +259,7 @@ struct variant_type_base_impl {
     static bool equals(const void* lh, const void* rh) { return *(Ty*)lh == *(Ty*)rh; }
     static bool less(const void* lh, const void* rh) { return *(Ty*)lh < *(Ty*)rh; }
     template<typename Ty2>
-    static void cast_conv(void* tgt, const void* src) {
+    static void cast_cvt(void* tgt, const void* src) {
         *(Ty*)tgt = static_cast<Ty>(*(Ty2*)src);
     }
 #ifdef USE_QT
@@ -336,7 +341,7 @@ struct variant_type_base_impl<
         return (*(Ty**)lh && *(Ty**)rh) ? (**(Ty**)lh < **(Ty**)rh) : false;
     }
     template<typename Ty2>
-    static void cast_conv(void* tgt, const void* src) {
+    static void cast_cvt(void* tgt, const void* src) {
         *(Ty*)tgt = static_cast<Ty>(*(Ty2*)src);
     }
 #ifdef USE_QT
@@ -349,9 +354,7 @@ struct variant_type_base_impl<
 };
 
 template<>
-struct variant_type_impl<std::string> : variant_type_base_impl<std::string, variant_id::kString> {
-    variant_type_impl() {}
-};
+struct variant_type_impl<std::string> : variant_type_base_impl<std::string, variant_id::kString> {};
 
 inline variant::variant(std::string_view s) : variant(static_cast<std::string>(s)) {}
 inline variant::variant(id_t type, std::string_view s) : variant(type, static_cast<std::string>(s)) {}
@@ -365,50 +368,50 @@ template<typename Ty, variant_id TypeId>
 struct variant_type_with_string_converter_impl : variant_type_base_impl<Ty, TypeId> {
     using super = variant_type_base_impl<Ty, TypeId>;
     variant_type_with_string_converter_impl() {
-        super::vtable()->converter(variant_id::kString) = from_string_conv;
-        variant_type_impl<std::string>::vtable()->converter(super::type_id) = to_string_conv;
+        super::vtable()->set_cvt(variant_id::kString, from_string_cvt);
+        variant_type_impl<std::string>::vtable()->set_cvt(super::type_id, to_string_cvt);
     }
-    static void from_string_conv(void* tgt, const void* src) { *(Ty*)tgt = from_string<Ty>(*(std::string*)src); }
-    static void to_string_conv(void* tgt, const void* src) { *(std::string*)tgt = to_string(*(Ty*)src); }
+    static void from_string_cvt(void* tgt, const void* src) { *(Ty*)tgt = from_string<Ty>(*(std::string*)src); }
+    static void to_string_cvt(void* tgt, const void* src) { *(std::string*)tgt = to_string(*(Ty*)src); }
 };
 
 template<>
 struct variant_type_impl<bool> : variant_type_with_string_converter_impl<bool, variant_id::kBoolean> {
     template<typename Ty>
-    static void cast_conv(void* tgt, const void* src) {
+    static void cast_to_bool_cvt(void* tgt, const void* src) {
         *(bool*)tgt = *(Ty*)src != 0;
     }
     variant_type_impl() {
-        vtable()->converter(variant_id::kInteger) = cast_conv<int>;
-        vtable()->converter(variant_id::kUInteger) = cast_conv<unsigned>;
-        vtable()->converter(variant_id::kDouble) = cast_conv<double>;
+        vtable()->set_cvt(variant_id::kInteger, cast_to_bool_cvt<int>);
+        vtable()->set_cvt(variant_id::kUInteger, cast_to_bool_cvt<unsigned>);
+        vtable()->set_cvt(variant_id::kDouble, cast_to_bool_cvt<double>);
     }
 };
 
 template<>
 struct variant_type_impl<int> : variant_type_with_string_converter_impl<int, variant_id::kInteger> {
     variant_type_impl() {
-        vtable()->converter(variant_id::kBoolean) = cast_conv<bool>;
-        vtable()->converter(variant_id::kUInteger) = cast_conv<unsigned>;
-        vtable()->converter(variant_id::kDouble) = cast_conv<double>;
+        vtable()->set_cvt(variant_id::kBoolean, cast_cvt<bool>);
+        vtable()->set_cvt(variant_id::kUInteger, cast_cvt<unsigned>);
+        vtable()->set_cvt(variant_id::kDouble, cast_cvt<double>);
     }
 };
 
 template<>
 struct variant_type_impl<unsigned> : variant_type_with_string_converter_impl<unsigned, variant_id::kUInteger> {
     variant_type_impl() {
-        vtable()->converter(variant_id::kBoolean) = cast_conv<bool>;
-        vtable()->converter(variant_id::kInteger) = cast_conv<int>;
-        vtable()->converter(variant_id::kDouble) = cast_conv<double>;
+        vtable()->set_cvt(variant_id::kBoolean, cast_cvt<bool>);
+        vtable()->set_cvt(variant_id::kInteger, cast_cvt<int>);
+        vtable()->set_cvt(variant_id::kDouble, cast_cvt<double>);
     }
 };
 
 template<>
 struct variant_type_impl<double> : variant_type_with_string_converter_impl<double, variant_id::kDouble> {
     variant_type_impl() {
-        vtable()->converter(variant_id::kBoolean) = cast_conv<bool>;
-        vtable()->converter(variant_id::kInteger) = cast_conv<int>;
-        vtable()->converter(variant_id::kUInteger) = cast_conv<unsigned>;
+        vtable()->set_cvt(variant_id::kBoolean, cast_cvt<bool>);
+        vtable()->set_cvt(variant_id::kInteger, cast_cvt<int>);
+        vtable()->set_cvt(variant_id::kUInteger, cast_cvt<unsigned>);
     }
 };
 

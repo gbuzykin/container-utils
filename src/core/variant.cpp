@@ -28,8 +28,8 @@ variant::variant(id_t type, const variant& v) : vtable_(get_impl(type)) {
         return;
     }
     auto tgt = vtable_->construct_default(&data_);
-    if (auto conv_func = vtable_->converter(v.vtable_->type)) {
-        if (auto pval = v.vtable_->value_ptr(&v.data_)) { conv_func(tgt, pval); }
+    if (auto cvt_func = vtable_->get_cvt(v.vtable_->type)) {
+        if (auto pval = v.vtable_->value_ptr(&v.data_)) { cvt_func(tgt, pval); }
     }
 }
 
@@ -62,7 +62,7 @@ variant& variant::operator=(variant&& v) NOEXCEPT {
 bool variant::can_convert(id_t type) const {
     auto vtable = get_impl(type);
     if (vtable_ == vtable) { return true; }
-    return vtable->converter(vtable_->type) != nullptr;
+    return vtable->get_cvt(vtable_->type) != nullptr;
 }
 
 void variant::convert(id_t type) {
@@ -76,10 +76,10 @@ void variant::convert(id_t type) {
     } else if (src_vtable->type == id_t::kInvalid) {
         vtable_->construct_default(&data_);
         return;
-    } else if (auto conv_func = vtable_->converter(src_vtable->type)) {
+    } else if (auto cvt_func = vtable_->get_cvt(src_vtable->type)) {
         if (auto pval = src_vtable->value_ptr(&data_)) {
             storage_t tmp;
-            conv_func(vtable_->construct_default(&tmp), pval);
+            cvt_func(vtable_->construct_default(&tmp), pval);
             src_vtable->destroy(&data_);
             vtable_->construct_move(&data_, &tmp);
             vtable_->destroy(&tmp);
