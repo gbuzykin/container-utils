@@ -208,6 +208,7 @@ struct func_ptr_holder<Func, std::enable_if_t<std::is_empty<Func>::value>> : pub
     explicit func_ptr_holder(const Func& func) : Func(func) {}
     func_ptr_holder(const func_ptr_holder&) = default;
     func_ptr_holder& operator=(const func_ptr_holder&) { return *this; }  // do nothing
+    ~func_ptr_holder() = default;
     const Func& get_func() const { return *this; }
 };
 

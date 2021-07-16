@@ -37,6 +37,7 @@ class set : public impl::rbtree<impl::set_node_type<Key>, Alloc, Comp> {
         super::operator=(std::move(other));
         return *this;
     }
+    ~set() = default;
 #endif  // __cplusplus
 
     set(std::initializer_list<value_type> init, const allocator_type& alloc) : super(alloc) {

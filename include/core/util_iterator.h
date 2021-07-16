@@ -169,6 +169,7 @@ struct ranged_debug_pointer {
     ranged_debug_pointer() NOEXCEPT = default;
     ranged_debug_pointer(const ranged_debug_pointer&) NOEXCEPT = default;
     ranged_debug_pointer& operator=(const ranged_debug_pointer&) NOEXCEPT = default;
+    ~ranged_debug_pointer() = default;
 #if _ITERATOR_DEBUG_LEVEL != 0
     explicit ranged_debug_pointer(PtrTy in_ptr, PtrTy in_begin, PtrTy in_end) NOEXCEPT : ptr(in_ptr),
                                                                                          begin(in_begin),
@@ -211,6 +212,7 @@ class array_iterator : public container_iterator_facade<Traits, array_iterator<T
         : ptr_(ranged_debug_pointer<pointer>(ptr, begin, end)) {}
     array_iterator(const array_iterator&) NOEXCEPT = default;
     array_iterator& operator=(const array_iterator&) NOEXCEPT = default;
+    ~array_iterator() = default;
 #ifdef _DEBUG
     array_iterator& operator=(array_iterator&& it) NOEXCEPT {
         assert(std::addressof(it) != this);
@@ -303,6 +305,7 @@ class list_iterator : public container_iterator_facade<Traits, list_iterator<Tra
     explicit list_iterator(node_type* node) NOEXCEPT : node_(node) {}
     list_iterator(const list_iterator&) NOEXCEPT = default;
     list_iterator& operator=(const list_iterator&) NOEXCEPT = default;
+    ~list_iterator() = default;
 #ifdef _DEBUG
     list_iterator& operator=(list_iterator&& it) NOEXCEPT {
         assert(std::addressof(it) != this);
@@ -372,6 +375,7 @@ class const_value_iterator : public iterator_facade<const_value_iterator<Val>, V
     explicit const_value_iterator(const Val& v) NOEXCEPT : v_(std::addressof(v)) {}
     const_value_iterator(const const_value_iterator& it) NOEXCEPT = default;
     const_value_iterator& operator=(const const_value_iterator& it) NOEXCEPT = default;
+    ~const_value_iterator() = default;
 
     void increment() NOEXCEPT {}
     void advance(std::ptrdiff_t j) NOEXCEPT {}

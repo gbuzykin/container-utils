@@ -44,7 +44,8 @@ class CORE_EXPORT pool_base {
     template<typename Ty>
     using sized_pool_type = sized_pool<size_of<part_hdr_t, Ty>::value, alignment_of<part_hdr_t, Ty>::value>;
 
-    explicit pool_base(uint32_t partition_size = kDefPartitionSize) : desc_(allocate_dummy_pool(kDefPartitionSize)) {}
+    pool_base() : desc_(allocate_dummy_pool(kDefPartitionSize)) {}
+    explicit pool_base(uint32_t partition_size) : desc_(allocate_dummy_pool(partition_size)) {}
 
     pool_base(const pool_base& other) NOEXCEPT { copy_from(other); }
     pool_base& operator=(const pool_base& other) NOEXCEPT {
@@ -245,7 +246,7 @@ class pool_allocator {
     using propagate_on_container_swap = std::true_type;
     using is_always_equal = std::false_type;
 
-    pool_allocator() {}
+    pool_allocator() = default;
     explicit pool_allocator(uint32_t partition_size) : pool_(partition_size) {}
     template<typename Ty2>
     pool_allocator(const pool_allocator<Ty2>& other) NOEXCEPT : pool_(other.pool_) {}
@@ -296,7 +297,7 @@ class pool_allocator<void> {
     using propagate_on_container_swap = std::true_type;
     using is_always_equal = std::false_type;
 
-    pool_allocator() {}
+    pool_allocator() = default;
     explicit pool_allocator(uint32_t partition_size) : pool_(partition_size) {}
     template<typename Ty2>
     pool_allocator(const pool_allocator<Ty2>& other) NOEXCEPT : pool_(other.pool_) {}
@@ -338,7 +339,7 @@ class global_pool_allocator {
     using propagate_on_container_swap = std::true_type;
     using is_always_equal = std::true_type;
 
-    global_pool_allocator() NOEXCEPT {}
+    global_pool_allocator() NOEXCEPT = default;
     template<typename Ty2>
     global_pool_allocator(const global_pool_allocator<Ty2>&) NOEXCEPT {}
     template<typename Ty2>
@@ -382,7 +383,7 @@ class global_pool_allocator<void> {
     using propagate_on_container_swap = std::true_type;
     using is_always_equal = std::true_type;
 
-    global_pool_allocator() NOEXCEPT {}
+    global_pool_allocator() NOEXCEPT = default;
     template<typename Ty2>
     global_pool_allocator(const global_pool_allocator<Ty2>&) NOEXCEPT {}
     template<typename Ty2>

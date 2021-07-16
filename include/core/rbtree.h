@@ -55,6 +55,7 @@ class rbtree : public rbtree_base<NodeTy, Alloc, Comp> {
         super::operator=(std::move(other));
         return *this;
     }
+    ~rbtree() = default;
 #endif  // __cplusplus
 
     void assign(std::initializer_list<value_type> init) {

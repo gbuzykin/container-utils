@@ -17,13 +17,14 @@ class rbtree_node_handle_getters : protected std::allocator_traits<Alloc>::templ
     using value_type = typename node_t::value_type;
     rbtree_node_handle_getters() NOEXCEPT_IF(std::is_nothrow_default_constructible<alloc_type>::value) {}
     explicit rbtree_node_handle_getters(const alloc_type& alloc) NOEXCEPT : alloc_type(alloc) {}
-#if __cplusplus < 201703L
+    ~rbtree_node_handle_getters() = default;
+    rbtree_node_handle_getters(const rbtree_node_handle_getters&) = delete;
+    rbtree_node_handle_getters& operator=(const rbtree_node_handle_getters&) = delete;
     rbtree_node_handle_getters(rbtree_node_handle_getters&& other) : alloc_type(std::move(other)) {}
     rbtree_node_handle_getters& operator=(rbtree_node_handle_getters&& other) {
         alloc_type::operator=(std::move(other));
         return *this;
     }
-#endif  // __cplusplus
     value_type& value() const { return node_t::get_value(static_cast<const NodeHandle*>(this)->node_); }
 };
 
@@ -39,13 +40,14 @@ class rbtree_node_handle_getters<NodeTy, Alloc, NodeHandle, std::void_t<typename
     using mapped_type = typename node_t::mapped_type;
     rbtree_node_handle_getters() NOEXCEPT_IF(std::is_nothrow_default_constructible<alloc_type>::value) {}
     explicit rbtree_node_handle_getters(const alloc_type& alloc) NOEXCEPT : alloc_type(alloc) {}
-#if __cplusplus < 201703L
+    ~rbtree_node_handle_getters() = default;
+    rbtree_node_handle_getters(const rbtree_node_handle_getters&) = delete;
+    rbtree_node_handle_getters& operator=(const rbtree_node_handle_getters&) = delete;
     rbtree_node_handle_getters(rbtree_node_handle_getters&& other) : alloc_type(std::move(other)) {}
     rbtree_node_handle_getters& operator=(rbtree_node_handle_getters&& other) {
         alloc_type::operator=(std::move(other));
         return *this;
     }
-#endif  // __cplusplus
     key_type& key() const {
         return const_cast<key_type&>(node_t::get_value(static_cast<const NodeHandle*>(this)->node_).first);
     }
@@ -64,8 +66,6 @@ class rbtree_node_handle
     using allocator_type = typename Traits::allocator_type;
 
     rbtree_node_handle() = default;
-    rbtree_node_handle(const rbtree_node_handle&) = delete;
-    rbtree_node_handle& operator=(const rbtree_node_handle&) = delete;
     rbtree_node_handle(rbtree_node_handle&& nh) NOEXCEPT : super(std::move(nh)) {
         node_ = nh.node_;
         nh.node_ = nullptr;
@@ -75,7 +75,7 @@ class rbtree_node_handle
         assert(std::addressof(nh) != this);
         if (std::addressof(nh) == this) { return *this; }
         if (node_) { Traits::helpers::delete_node(*this, node_); }
-        alloc_type::operator=(std::move(nh));
+        super::operator=(std::move(nh));
         node_ = nh.node_;
         nh.node_ = nullptr;
         return *this;

@@ -42,6 +42,7 @@ class map : public impl::rbtree<impl::map_node_type<Key, Ty>, Alloc, Comp> {
         super::operator=(std::move(other));
         return *this;
     }
+    ~map() = default;
 #endif  // __cplusplus
 
     map(std::initializer_list<value_type> init, const allocator_type& alloc) : super(alloc) {

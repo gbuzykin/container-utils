@@ -42,6 +42,7 @@ class multimap : public impl::rbtree_multi<impl::map_node_type<Key, Ty>, Alloc, 
         super::operator=(std::move(other));
         return *this;
     }
+    ~multimap() = default;
 #endif  // __cplusplus
 
     multimap(std::initializer_list<value_type> init, const allocator_type& alloc) : super(alloc) {

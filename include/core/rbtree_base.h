@@ -87,6 +87,7 @@ class rbtree_compare : public std::allocator_traits<Alloc>::template rebind_allo
         func_ = std::move(other.func_);
         return *this;
     }
+    ~rbtree_compare() = default;
 #endif  // __cplusplus
 
     const Comp& get_compare() const { return func_; }
@@ -119,6 +120,7 @@ class rbtree_compare<NodeTy, Alloc, Comp,
         alloc_type::operator=(std::move(other));
         return *this;
     }
+    ~rbtree_compare() = default;
 #endif  // __cplusplus
 
     Comp get_compare() const { return Comp(); }
